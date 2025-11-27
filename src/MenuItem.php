@@ -3,7 +3,6 @@
 namespace Nwidart\Menus;
 
 use Closure;
-use Collective\Html\HtmlFacade as HTML;
 use Illuminate\Contracts\Support\Arrayable as ArrayableContract;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Request;
@@ -385,7 +384,56 @@ class MenuItem implements ArrayableContract
 
         Arr::forget($attributes, ['active', 'icon']);
 
-        return HTML::attributes($attributes);
+        return $this->buildAttributes($attributes);
+    }
+
+    /**
+     * Build HTML attributes from array.
+     *
+     * @param array $attributes
+     * @return string
+     */
+    protected function buildAttributes(array $attributes)
+    {
+        $html = [];
+
+        foreach ($attributes as $key => $value) {
+            $element = $this->attributeElement($key, $value);
+
+            if (!is_null($element)) {
+                $html[] = $element;
+            }
+        }
+
+        return count($html) > 0 ? ' ' . implode(' ', $html) : '';
+    }
+
+    /**
+     * Build a single attribute element.
+     *
+     * @param string $key
+     * @param mixed $value
+     * @return string|null
+     */
+    protected function attributeElement($key, $value)
+    {
+        if (is_numeric($key)) {
+            return $value;
+        }
+
+        if (is_bool($value) && $key !== 'value') {
+            return $value ? $key : null;
+        }
+
+        if (is_null($value) || (is_array($value) && empty($value))) {
+            return null;
+        }
+
+        if (is_array($value)) {
+            return $key . '="' . htmlspecialchars(json_encode($value), ENT_QUOTES, 'UTF-8', false) . '"';
+        }
+
+        return $key . '="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8', false) . '"';
     }
 
     /**
